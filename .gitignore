@@ -5,3 +5,4 @@ __pycache__/
 cache.db
 portfolio.db
 ml/saved_models/
+*.db
