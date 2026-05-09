@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Quant Terminal</title>
+  <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+  <link rel="stylesheet" href="/static/style.css?v=4">
+</head>
+<body>
+
+  <div id="topbar">
+    <div id="topbar-left">
+      <span class="logo">QT</span>
+      <span id="market-status" class="status-badge">LIVE</span>
+    </div>
+    <div id="ticker-tape"><div id="tape-inner">Loading market data...</div></div>
+    <div id="topbar-right">
+      <span id="clock"></span>
+      <span id="ist-label">IST</span>
+    </div>
+  </div>
+
+  <div id="nav-bar">
+    <button class="nav-btn active" onclick="showPanel('equities', this)">EQUITIES</button>
+    <button class="nav-btn" onclick="showPanel('india', this)">INDIA</button>
+    <button class="nav-btn" onclick="showPanel('news', this)">NEWS</button>
+    <button class="nav-btn" onclick="showPanel('macro', this)">MACRO</button>
+    <button class="nav-btn" onclick="showPanel('portfolio', this)">PORTFOLIO</button>
+    <button class="nav-btn" onclick="showPanel('backtest', this)">BACKTEST</button>
+    <button class="nav-btn" onclick="showPanel('screener', this)">SCREENER</button>
+    <div id="search-box">
+      <input id="search-input" type="text" placeholder="Search ticker e.g. AAPL, TCS.NS" />
+      <button onclick="searchTicker()">GO</button>
+    </div>
+  </div>
+
+  <div id="main-layout">
+
+    <div id="sidebar">
+      <div class="panel">
+        <div class="panel-title">WATCHLIST</div>
+        <div id="watchlist-body">Loading...</div>
+      </div>
+    </div>
+
+    <div id="content-area">
+
+      <!-- EQUITIES -->
+      <div id="panel-equities" class="content-panel active">
+        <div id="quote-card" class="panel" style="display:none">
+          <div id="quote-header"></div>
+          <div id="quote-stats"></div>
+        </div>
+        <div class="panel">
+          <div class="panel-title">
+            PRICE CHART
+            <span class="period-btns">
+              <button class="period-btn" onclick="changePeriod('1mo','1h',this)">1M</button>
+              <button class="period-btn" onclick="changePeriod('3mo','1d',this)">3M</button>
+              <button class="period-btn active" onclick="changePeriod('6mo','1d',this)">6M</button>
+              <button class="period-btn" onclick="changePeriod('1y','1wk',this)">1Y</button>
+            </span>
+          </div>
+          <div id="price-chart"></div>
+        </div>
+        <div class="panel">
+          <div class="panel-title">ML SIGNAL ENGINE</div>
+          <div id="ml-signal-panel" style="color:var(--text-dim);padding:10px">
+            Search a ticker to generate ML signal.
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-title">TECHNICAL SIGNALS</div>
+          <div id="ta-signal-panel" style="color:var(--text-dim);padding:10px">
+            Search a ticker to see signals.
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-title">FUNDAMENTALS</div>
+          <div id="fundamentals-body">Search a ticker above to see fundamentals.</div>
+        </div>
+      </div>
+
+      <!-- INDIA -->
+      <div id="panel-india" class="content-panel">
+        <div class="panel">
+          <div class="panel-title">INDIAN INDICES</div>
+          <div id="india-indices">Loading...</div>
+        </div>
+        <div class="panel">
+          <div class="panel-title">TOP NSE STOCKS</div>
+          <div id="india-stocks">Loading...</div>
+        </div>
+      </div>
+
+      <!-- NEWS -->
+      <div id="panel-news" class="content-panel">
+        <div class="panel">
+          <div class="panel-title">
+            MARKET NEWS
+            <input id="news-query" type="text" placeholder="search topic..." style="margin-left:12px;width:160px">
+            <button onclick="loadNews()" style="margin-left:6px">GO</button>
+          </div>
+          <div id="news-body">Loading...</div>
+        </div>
+      </div>
+
+      <!-- MACRO -->
+      <div id="panel-macro" class="content-panel">
+        <div class="panel">
+          <div class="panel-title">MACRO INDICATORS — FRED</div>
+          <div id="macro-body">Loading...</div>
+        </div>
+      </div>
+
+      <!-- PORTFOLIO -->
+      <div id="panel-portfolio" class="content-panel">
+        <div class="panel">
+          <div class="panel-title">ADD POSITION</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+            <input id="pt-ticker"  placeholder="Ticker e.g. AAPL"    style="width:130px">
+            <input id="pt-shares"  placeholder="Shares"  type="number" style="width:100px">
+            <input id="pt-price"   placeholder="Buy Price" type="number" style="width:120px">
+            <input id="pt-notes"   placeholder="Notes (optional)"     style="width:180px">
+            <button onclick="addPosition()"
+              style="background:var(--gold);color:#000;border:none;padding:5px 18px;
+                     font-family:'Courier New',monospace;font-weight:bold;cursor:pointer;border-radius:2px">
+              ADD
+            </button>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-title">PORTFOLIO POSITIONS</div>
+          <div id="portfolio-body">Loading...</div>
+        </div>
+        <div class="panel">
+          <div class="panel-title">PORTFOLIO SUMMARY</div>
+          <div id="portfolio-summary"></div>
+        </div>
+      </div>
+
+      <!-- BACKTEST -->
+      <div id="panel-backtest" class="content-panel">
+        <div class="panel">
+          <div class="panel-title">BACKTEST SETTINGS</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+            <input id="bt-ticker" placeholder="Ticker e.g. AAPL" style="width:150px">
+            <select id="bt-strategy"
+              style="background:var(--bg3);color:var(--gold);border:1px solid var(--border);
+                     padding:5px 10px;font-family:'Courier New',monospace;font-size:12px">
+              <option value="rsi">RSI Strategy (buy &lt;30, sell &gt;70)</option>
+              <option value="macd">MACD Crossover</option>
+              <option value="sma_cross">SMA 20/50 Crossover</option>
+            </select>
+            <select id="bt-period"
+              style="background:var(--bg3);color:var(--gold);border:1px solid var(--border);
+                     padding:5px 10px;font-family:'Courier New',monospace;font-size:12px">
+              <option value="1y">1 Year</option>
+              <option value="2y">2 Years</option>
+              <option value="5y">5 Years</option>
+            </select>
+            <button onclick="runBacktest()"
+              style="background:var(--gold);color:#000;border:none;padding:5px 18px;
+                     font-family:'Courier New',monospace;font-weight:bold;cursor:pointer;border-radius:2px">
+              RUN BACKTEST
+            </button>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-title">RESULTS</div>
+          <div id="backtest-results" style="color:var(--text-dim);padding:10px">
+            Enter a ticker and click RUN BACKTEST.
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-title">EQUITY CURVE</div>
+          <div id="backtest-chart" style="height:300px"></div>
+        </div>
+        <div class="panel">
+          <div class="panel-title">TRADE LOG (last 20)</div>
+          <div id="backtest-trades"></div>
+        </div>
+      </div>
+
+      <!-- SCREENER -->
+      <div id="panel-screener" class="content-panel">
+        <div class="panel">
+          <div class="panel-title">STOCK SCREENER — FILTERS</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+            <input id="sc-min-pe"     placeholder="Min P/E"      type="number" style="width:110px">
+            <input id="sc-max-pe"     placeholder="Max P/E"      type="number" style="width:110px">
+            <input id="sc-min-change" placeholder="Min % Change" type="number" style="width:130px">
+            <input id="sc-max-change" placeholder="Max % Change" type="number" style="width:130px">
+            <button onclick="runScreener()"
+              style="background:var(--gold);color:#000;border:none;padding:5px 18px;
+                     font-family:'Courier New',monospace;font-weight:bold;cursor:pointer;border-radius:2px">
+              SCREEN
+            </button>
+          </div>
+          <div style="font-size:10px;color:var(--text-dim);margin-top:8px">
+            Leave filters empty to screen all stocks. Click any result row to load that ticker.
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-title">SCREENER RESULTS</div>
+          <div id="screener-results" style="color:var(--text-dim);padding:10px">
+            Set filters and click SCREEN.
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script src="/static/charts.js?v=4"></script>
+  <script src="/static/app.js?v=4"></script>
+</body>
+</html>
